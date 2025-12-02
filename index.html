@@ -19,9 +19,177 @@
             line-height: 1.6;
         }
 
+        /* HEADER */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 15, 25, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(235, 255, 0, 0.2);
+            padding: 16px 40px;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .header-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #ebff00;
+        }
+
+        .btn-view-image {
+            background: #ebff00;
+            color: #0F0F19;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-view-image:hover {
+            background: #f1ff4f;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(235, 255, 0, 0.3);
+        }
+
+        .btn-view-image:active {
+            background: #d9eb00;
+            transform: translateY(0);
+        }
+
+        .btn-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 200;
+            display: none;
+            overflow: auto;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: block;
+        }
+
+        .modal-content {
+            position: relative;
+            width: 100%;
+            min-height: 100vh;
+            padding: 80px 0 40px 0;
+        }
+
+        .modal-image {
+            width: 100%;
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .btn-close-modal {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #ff5757;
+            color: #fff;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(255, 87, 87, 0.6);
+            z-index: 201;
+        }
+
+        .btn-close-modal:hover {
+            background: #ff7070;
+            transform: rotate(90deg) scale(1.1);
+            box-shadow: 0 6px 25px rgba(255, 87, 87, 0.8);
+        }
+
+        .btn-close-modal:active {
+            background: #ff3838;
+            transform: rotate(90deg) scale(0.95);
+        }
+
+        /* FILE INPUT */
+        .file-upload-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .file-upload-label {
+            background: rgba(235, 255, 0, 0.1);
+            color: #ebff00;
+            border: 2px solid #ebff00;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .file-upload-label:hover {
+            background: rgba(235, 255, 0, 0.2);
+            border-color: #f1ff4f;
+            color: #f1ff4f;
+        }
+
+        .file-upload-input {
+            display: none;
+        }
+
+        .file-name {
+            color: #9697cd;
+            font-size: 0.85rem;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
         .container {
             max-width: 1400px;
-            margin: 0 auto;
+            margin: 80px auto 0;
         }
 
         h1 {
@@ -223,6 +391,26 @@
     </style>
 </head>
 <body>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-title">Mapeamento de Cores - Site vs Figma</div>
+        <button class="btn-view-image" id="btnViewImage">
+            <svg class="btn-icon" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
+            </svg>
+            See Reference
+        </button>
+    </header>
+
+    <!-- MODAL -->
+    <div class="modal-overlay" id="modalOverlay">
+        <button class="btn-close-modal" id="btnCloseModal">×</button>
+        <div class="modal-content">
+            <img class="modal-image" id="modalImage" src="" alt="Imagem de referência">
+        </div>
+    </div>
+
     <div class="container">
         <h1>Mapeamento de Cores</h1>
         <p class="subtitle">Comparação entre as cores atuais do site e os tokens do Figma</p>
@@ -875,5 +1063,45 @@
         </div>
 
     </div>
+
+    <script>
+        // Elementos
+        const btnViewImage = document.getElementById('btnViewImage');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalImage = document.getElementById('modalImage');
+        const btnCloseModal = document.getElementById('btnCloseModal');
+
+        // URL da imagem de referência
+        const referenceImageUrl = './style/img/newcolorsalfa.png';
+
+        // Abrir modal
+        btnViewImage.addEventListener('click', function() {
+            modalImage.src = referenceImageUrl;
+            modalOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+
+        // Fechar modal
+        btnCloseModal.addEventListener('click', function() {
+            modalOverlay.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        });
+
+        // Fechar modal clicando fora da imagem
+        modalOverlay.addEventListener('click', function(e) {
+            if (e.target === modalOverlay) {
+                modalOverlay.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+        });
+
+        // Fechar modal com ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modalOverlay.classList.contains('active')) {
+                modalOverlay.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+        });
+    </script>
 </body>
 </html>
