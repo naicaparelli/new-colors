@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapeamento de Cores - Site vs Figma</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0F0F19 0%, #161626 100%);
+            color: #f5f5f5;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #ebff00 0%, #8d9900 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #9697cd;
+            margin-bottom: 50px;
+            font-size: 1.1rem;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.05);
+            padding: 10px 20px;
+            border-radius: 8px;
+        }
+
+        .legend-box {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .legend-box.old { background: #ff5757; }
+        .legend-box.new { background: #21ca6f; }
+        .legend-box.match { background: #ebff00; }
+        .legend-box.missing { background: #6a6ba4; }
+
+        .section {
+            margin-bottom: 50px;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ebff00;
+            color: #ebff00;
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .color-card {
+            background: rgba(30, 30, 88, 0.4);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(235, 255, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .color-card:hover {
+            border-color: #ebff00;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(235, 255, 0, 0.2);
+        }
+
+        .color-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #f5f5f5;
+            font-family: 'Courier New', monospace;
+        }
+
+        .color-comparison {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .color-box {
+            flex: 1;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border: 2px solid rgba(255,255,255,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .color-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: inherit;
+        }
+
+        .color-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            z-index: 1;
+            position: relative;
+        }
+
+        .color-value {
+            font-size: 0.75rem;
+            font-family: 'Courier New', monospace;
+            z-index: 1;
+            position: relative;
+            background: rgba(0,0,0,0.3);
+            padding: 3px 6px;
+            border-radius: 3px;
+            align-self: flex-start;
+        }
+
+        .arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #ebff00;
+        }
+
+        .figma-token {
+            font-size: 0.8rem;
+            color: #9697cd;
+            margin-top: 10px;
+            padding: 8px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            line-height: 1.4;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-match {
+            background: rgba(33, 202, 111, 0.2);
+            color: #21ca6f;
+            border: 1px solid #21ca6f;
+        }
+
+        .status-similar {
+            background: rgba(235, 255, 0, 0.2);
+            color: #ebff00;
+            border: 1px solid #ebff00;
+        }
+
+        .status-missing {
+            background: rgba(255, 87, 87, 0.2);
+            color: #ff5757;
+            border: 1px solid #ff5757;
+        }
+
+        .gradient-box {
+            background: var(--gradient-value);
+        }
+
+        @media (max-width: 768px) {
+            .color-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Mapeamento de Cores</h1>
+        <p class="subtitle">Comparação entre as cores atuais do site e os tokens do Figma</p>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-box match"></div>
+                <span>Match Exato</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box new"></div>
+                <span>Similar/Ajustado</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box missing"></div>
+                <span>Sem Equivalente</span>
+            </div>
+        </div>
+
+        <!-- BACKGROUNDS -->
+        <div class="section">
+            <h2 class="section-title">Backgrounds</h2>
+            <div class="color-grid">
+                
+                <div class="color-card">
+                    <div class="color-name">--background-main</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #00003c;">
+                            <span class="color-label" style="color: #ebff00;">Site Atual</span>
+                            <span class="color-value" style="color: #fff;">#00003c</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #0F0F19;">
+                            <span class="color-label" style="color: #ebff00;">Figma</span>
+                            <span class="color-value" style="color: #fff;">#0F0F19</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">components.bg.primary</div>
+                    <span class="status-badge status-similar">Ajustado</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--background-primary</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #1e1e58;">
+                            <span class="color-label" style="color: #ebff00;">Site Atual</span>
+                            <span class="color-value" style="color: #fff;">#1e1e58</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #161626;">
+                            <span class="color-label" style="color: #ebff00;">Figma</span>
+                            <span class="color-value" style="color: #fff;">#161626</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">components.bg.secondary</div>
+                    <span class="status-badge status-similar">Ajustado</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--background-secondary</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #2b2b75;">
+                            <span class="color-label" style="color: #ebff00;">Site Atual</span>
+                            <span class="color-value" style="color: #fff;">#2b2b75</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #1F1F38;">
+                            <span class="color-label" style="color: #ebff00;">Figma</span>
+                            <span class="color-value" style="color: #fff;">#1F1F38</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">components.bg.tertiary</div>
+                    <span class="status-badge status-similar">Ajustado</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--background-extra-1 (Brand)</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #ebff00;">
+                            <span class="color-label" style="color: #00003c;">Site Atual</span>
+                            <span class="color-value" style="color: #00003c;">#ebff00</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #ebff00;">
+                            <span class="color-label" style="color: #00003c;">Figma</span>
+                            <span class="color-value" style="color: #00003c;">#ebff00</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">components.bg.brand</div>
+                    <span class="status-badge status-match">Match Exato</span>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- TEXT COLORS -->
+        <div class="section">
+            <h2 class="section-title">Text Colors</h2>
+            <div class="color-grid">
+                
+                <div class="color-card">
+                    <div class="color-name">--text-color-primary</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #f5f5f5;">
+                            <span class="color-label" style="color: #00003c;">Site Atual</span>
+                            <span class="color-value" style="color: #00003c;">#f5f5f5</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #f5f5f5;">
+                            <span class="color-label" style="color: #00003c;">Figma</span>
+                            <span class="color-value" style="color: #00003c;">#f5f5f5</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">components.text.primary</div>
+                    <span class="status-badge status-match">Match Exato</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--text-color-secondary</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #9697cd;">
+                            <span class="color-label" style="color: #00003c;">Site Atual</span>
+                            <span class="color-value" style="color: #00003c;">#9697cd</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #9697cd;">
+                            <span class="color-label" style="color: #00003c;">Figma</span>
+                            <span class="color-value" style="color: #00003c;">#9697cd</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">components.text.secondary</div>
+                    <span class="status-badge status-match">Match Exato</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--text-color-contrast</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #ebff00;">
+                            <span class="color-label" style="color: #00003c;">Site Atual</span>
+                            <span class="color-value" style="color: #00003c;">#ebff00</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #ebff00;">
+                            <span class="color-label" style="color: #00003c;">Figma</span>
+                            <span class="color-value" style="color: #00003c;">#ebff00</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">components.text.brand-primary</div>
+                    <span class="status-badge status-match">Match Exato</span>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- BUTTONS PRIMARY -->
+        <div class="section">
+            <h2 class="section-title">Buttons - Primary</h2>
+            <div class="color-grid">
+                
+                <div class="color-card">
+                    <div class="color-name">--button-primary-bg</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #ebff00;">
+                            <span class="color-label" style="color: #00003c;">Site Atual</span>
+                            <span class="color-value" style="color: #00003c;">#ebff00</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #ebff00;">
+                            <span class="color-label" style="color: #00003c;">Figma</span>
+                            <span class="color-value" style="color: #00003c;">#ebff00</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">components.button.primary.default.bg</div>
+                    <span class="status-badge status-match">Match Exato</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--button-primary-text</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #00003c;">
+                            <span class="color-label" style="color: #ebff00;">Site Atual</span>
+                            <span class="color-value" style="color: #fff;">#00003c</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #0F0F19;">
+                            <span class="color-label" style="color: #ebff00;">Figma</span>
+                            <span class="color-value" style="color: #fff;">#0F0F19</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">components.button.primary.default.text</div>
+                    <span class="status-badge status-similar">Ajustado</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--button-primary-bg-hover</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #f1ff4f;">
+                            <span class="color-label" style="color: #00003c;">Site Atual</span>
+                            <span class="color-value" style="color: #00003c;">#f1ff4f</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #f1ff4f;">
+                            <span class="color-label" style="color: #00003c;">Figma</span>
+                            <span class="color-value" style="color: #00003c;">#f1ff4f</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">components.button.primary.hover.hover</div>
+                    <span class="status-badge status-match">Match Exato</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--button-primary-bg-active</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #d9eb00;">
+                            <span class="color-label" style="color: #00003c;">Site Atual</span>
+                            <span class="color-value" style="color: #00003c;">#d9eb00</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #d9eb00;">
+                            <span class="color-label" style="color: #00003c;">Figma</span>
+                            <span class="color-value" style="color: #00003c;">#d9eb00</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">components.button.primary.pressed.pressed</div>
+                    <span class="status-badge status-match">Match Exato</span>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- BUTTONS SECONDARY -->
+        <div class="section">
+            <h2 class="section-title">Buttons - Secondary</h2>
+            <div class="color-grid">
+                
+                <div class="color-card">
+                    <div class="color-name">--button-secondary-bg</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #00003c;">
+                            <span class="color-label" style="color: #ebff00;">Site Atual</span>
+                            <span class="color-value" style="color: #fff;">#00003c</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #0F0F19;">
+                            <span class="color-label" style="color: #ebff00;">Figma</span>
+                            <span class="color-value" style="color: #fff;">#0F0F19</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">components.button.secondary.default.bg</div>
+                    <span class="status-badge status-similar">Ajustado</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--button-secondary-text</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #f5f5f5;">
+                            <span class="color-label" style="color: #00003c;">Site Atual</span>
+                            <span class="color-value" style="color: #00003c;">#f5f5f5</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #f5f5f5;">
+                            <span class="color-label" style="color: #00003c;">Figma</span>
+                            <span class="color-value" style="color: #00003c;">#f5f5f5</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">components.button.secondary.default.text</div>
+                    <span class="status-badge status-match">Match Exato</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--button-secondary-bg-hover</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #181871;">
+                            <span class="color-label" style="color: #ebff00;">Site Atual</span>
+                            <span class="color-value" style="color: #fff;">#181871</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #1F1F38;">
+                            <span class="color-label" style="color: #ebff00;">Figma</span>
+                            <span class="color-value" style="color: #fff;">#1F1F38</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">components.button.secondary.hover.hover</div>
+                    <span class="status-badge status-similar">Ajustado</span>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- INDICATORS -->
+        <div class="section">
+            <h2 class="section-title">Indicators / Status</h2>
+            <div class="color-grid">
+                
+                <div class="color-card">
+                    <div class="color-name">--indicator-correctly</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #21ca6f;">
+                            <span class="color-label" style="color: #00003c;">Site Atual</span>
+                            <span class="color-value" style="color: #00003c;">#21ca6f</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #21ca6f;">
+                            <span class="color-label" style="color: #00003c;">Figma</span>
+                            <span class="color-value" style="color: #00003c;">#21ca6f</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">_semantic.color.status.success.base</div>
+                    <span class="status-badge status-match">Match Exato</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--indicator-error</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #ff5757;">
+                            <span class="color-label" style="color: #00003c;">Site Atual</span>
+                            <span class="color-value" style="color: #00003c;">#ff5757</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #ff5757;">
+                            <span class="color-label" style="color: #00003c;">Figma</span>
+                            <span class="color-value" style="color: #00003c;">#ff5757</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">_semantic.color.status.error.base</div>
+                    <span class="status-badge status-match">Match Exato</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--indicator-warning</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #ffc90a;">
+                            <span class="color-label" style="color: #00003c;">Site Atual</span>
+                            <span class="color-value" style="color: #00003c;">#ffc90a</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #ffc90a;">
+                            <span class="color-label" style="color: #00003c;">Figma</span>
+                            <span class="color-value" style="color: #00003c;">#ffc90a</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">_semantic.color.status.warning.base</div>
+                    <span class="status-badge status-match">Match Exato</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--indicator-extra (Info)</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #2f80ed;">
+                            <span class="color-label" style="color: #fff;">Site Atual</span>
+                            <span class="color-value" style="color: #fff;">#2f80ed</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #6a6ba4;">
+                            <span class="color-label" style="color: #fff;">Figma</span>
+                            <span class="color-value" style="color: #fff;">Criar token</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">❌ Sem equivalente no Figma</div>
+                    <span class="status-badge status-missing">Criar Token</span>
+                </div>
+
+            </div>
+        </div>
+
+                <div class="color-card">
+                    <div class="color-name">--footer-background</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #19194c;">
+                            <span class="color-label" style="color: #ebff00;">Site Atual</span>
+                            <span class="color-value" style="color: #fff;">#19194c</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #161626;">
+                            <span class="color-label" style="color: #ebff00;">Figma</span>
+                            <span class="color-value" style="color: #fff;">#161626</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">components.bg.secondary</div>
+                    <span class="status-badge status-similar">Ajustado</span>
+                </div>
+        <div class="section">
+            <h2 class="section-title">Casos Especiais / Sem Equivalente</h2>
+            <div class="color-grid">
+                
+                <div class="color-card">
+                    <div class="color-name">--search-bg</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #24262b;">
+                            <span class="color-label" style="color: #ebff00;">Site Atual</span>
+                            <span class="color-value" style="color: #fff;">#24262b</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #1F1F38;">
+                            <span class="color-label" style="color: #ebff00;">Figma</span>
+                            <span class="color-value" style="color: #fff;">#1F1F38</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">Usar components.bg.tertiary</div>
+                    <span class="status-badge status-similar">Ajustado</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--search-bg-extra</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #2b2b75;">
+                            <span class="color-label" style="color: #ebff00;">Site Atual</span>
+                            <span class="color-value" style="color: #fff;">#2b2b75</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #1F1F38;">
+                            <span class="color-label" style="color: #ebff00;">Figma</span>
+                            <span class="color-value" style="color: #fff;">#1F1F38</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">components.bg.tertiary</div>
+                    <span class="status-badge status-similar">Ajustado</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--search-bg-active</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #1e1e58;">
+                            <span class="color-label" style="color: #ebff00;">Site Atual</span>
+                            <span class="color-value" style="color: #fff;">#1e1e58</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #161626;">
+                            <span class="color-label" style="color: #ebff00;">Figma</span>
+                            <span class="color-value" style="color: #fff;">#161626</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">components.input.focused.border context</div>
+                    <span class="status-badge status-similar">Ajustado</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--table-border-color</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #1e1e58;">
+                            <span class="color-label" style="color: #ebff00;">Site Atual</span>
+                            <span class="color-value" style="color: #fff;">#1e1e58</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #161626;">
+                            <span class="color-label" style="color: #ebff00;">Figma</span>
+                            <span class="color-value" style="color: #fff;">#161626</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">components.bg.secondary</div>
+                    <span class="status-badge status-similar">Ajustado</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--switch-bg</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #2b2b75;">
+                            <span class="color-label" style="color: #ebff00;">Site Atual</span>
+                            <span class="color-value" style="color: #fff;">#2b2b75</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #1F1F38;">
+                            <span class="color-label" style="color: #ebff00;">Figma</span>
+                            <span class="color-value" style="color: #fff;">#1F1F38</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">components.bg.tertiary</div>
+                    <span class="status-badge status-similar">Ajustado</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--switch-disk-active</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #1e1e58;">
+                            <span class="color-label" style="color: #ebff00;">Site Atual</span>
+                            <span class="color-value" style="color: #fff;">#1e1e58</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #161626;">
+                            <span class="color-label" style="color: #ebff00;">Figma</span>
+                            <span class="color-value" style="color: #fff;">#161626</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">components.bg.secondary</div>
+                    <span class="status-badge status-similar">Ajustado</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--table-color-2 (Cyan)</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #00fff0;">
+                            <span class="color-label" style="color: #00003c;">Site Atual</span>
+                            <span class="color-value" style="color: #00003c;">#00fff0</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #6a6ba4;">
+                            <span class="color-label" style="color: #fff;">Figma</span>
+                            <span class="color-value" style="color: #fff;">Criar token</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">❌ Sem equivalente - criar token de data viz</div>
+                    <span class="status-badge status-missing">Criar Token</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--table-color-3 (Pink)</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #ff006b;">
+                            <span class="color-label" style="color: #fff;">Site Atual</span>
+                            <span class="color-value" style="color: #fff;">#ff006b</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #6a6ba4;">
+                            <span class="color-label" style="color: #fff;">Figma</span>
+                            <span class="color-value" style="color: #fff;">Criar token</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">❌ Sem equivalente - criar token de data viz</div>
+                    <span class="status-badge status-missing">Criar Token</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--jackpot-prize-color-1</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #d32f2f;">
+                            <span class="color-label" style="color: #fff;">Site Atual</span>
+                            <span class="color-value" style="color: #fff;">#d32f2f</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #6a6ba4;">
+                            <span class="color-label" style="color: #fff;">Figma</span>
+                            <span class="color-value" style="color: #fff;">Criar token</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">❌ Sem equivalente - criar tokens de tier/gamification</div>
+                    <span class="status-badge status-missing">Criar Token</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--social-media-background</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #32343b;">
+                            <span class="color-label" style="color: #ebff00;">Site Atual</span>
+                            <span class="color-value" style="color: #fff;">#32343b</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #0F0F19;">
+                            <span class="color-label" style="color: #ebff00;">Figma</span>
+                            <span class="color-value" style="color: #fff;">#0F0F19</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">Usar components.bg.primary</div>
+                    <span class="status-badge status-similar">Ajustado</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--footer-social-media-background</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #00003c;">
+                            <span class="color-label" style="color: #ebff00;">Site Atual</span>
+                            <span class="color-value" style="color: #fff;">#00003c</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #0F0F19;">
+                            <span class="color-label" style="color: #ebff00;">Figma</span>
+                            <span class="color-value" style="color: #fff;">#0F0F19</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">components.bg.primary</div>
+                    <span class="status-badge status-similar">Ajustado</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--page-vip-background</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #00003c;">
+                            <span class="color-label" style="color: #ebff00;">Site Atual</span>
+                            <span class="color-value" style="color: #fff;">#00003c</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #0F0F19;">
+                            <span class="color-label" style="color: #ebff00;">Figma</span>
+                            <span class="color-value" style="color: #fff;">#0F0F19</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">components.bg.primary</div>
+                    <span class="status-badge status-similar">Ajustado</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--page-vip-background-element</div>
+                    <div class="color-comparison">
+                        <div class="color-box" style="background: #2b2b75;">
+                            <span class="color-label" style="color: #ebff00;">Site Atual</span>
+                            <span class="color-value" style="color: #fff;">#2b2b75</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box" style="background: #1F1F38;">
+                            <span class="color-label" style="color: #ebff00;">Figma</span>
+                            <span class="color-value" style="color: #fff;">#1F1F38</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">components.bg.tertiary</div>
+                    <span class="status-badge status-similar">Ajustado</span>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- GRADIENTS -->
+        <div class="section">
+            <h2 class="section-title">Gradientes</h2>
+            <div class="color-grid">
+                
+                <div class="color-card">
+                    <div class="color-name">--background-extra-10</div>
+                    <div class="color-comparison">
+                        <div class="color-box gradient-box" style="--gradient-value: linear-gradient(137.82deg,#ffce5a 16.96%,#ff8b29 91.65%);">
+                            <span class="color-label" style="color: #00003c;">Site Atual</span>
+                            <span class="color-value" style="color: #00003c;">Orange/Yellow</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box gradient-box" style="--gradient-value: linear-gradient(132.59deg,#ebff00 0%,#eab308 49%,#ef4444 100%);">
+                            <span class="color-label" style="color: #00003c;">Figma</span>
+                            <span class="color-value" style="color: #00003c;">gradient.hot</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">gradient.gradients.hot</div>
+                    <span class="status-badge status-similar">Similar</span>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-name">--loading-spinner</div>
+                    <div class="color-comparison">
+                        <div class="color-box gradient-box" style="--gradient-value: linear-gradient(142deg,#ebff00 9.27%,#cbe501 40.62%,#9fd32f 52.92%,#f3ffac 85.47%);">
+                            <span class="color-label" style="color: #00003c;">Site Atual</span>
+                            <span class="color-value" style="color: #00003c;">Lime Gradient</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="color-box gradient-box" style="--gradient-value: linear-gradient(135deg,#fcffcc 0%,#8d9900 100%);">
+                            <span class="color-label" style="color: #00003c;">Figma</span>
+                            <span class="color-value" style="color: #00003c;">gradient.primary</span>
+                        </div>
+                    </div>
+                    <div class="figma-token">gradient.gradients.primary</div>
+                    <span class="status-badge status-similar">Similar</span>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>
